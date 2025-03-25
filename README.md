@@ -2,9 +2,9 @@
 
 ## 🎯 프로젝트 목표
 ### 1. 로컬 Jenkins 기반 CI 파이프라인 구축
-- GitHub 저장소에서 코드를 pull 받아 자동으로 빌드
-  
-- .jar 파일을 생성하여 관리하는 자동화된 빌드 시스템 구성
+- GitHub 저장소에 push가 발생하면 코드를 자동으로 pull 받아 빌드
+
+- 빌드된 `.jar` 파일을 생성하여 관리하는 자동화된 빌드 시스템 구성
 
 ### 2. 운영 서버(myserver02)로의 자동 배포 및 실행 (CD)
 - 빌드된 .jar 파일을 원격 서버로 전송
@@ -59,6 +59,7 @@ GitHub → [myserver01]
 ---
 
 ## 📁 1. 배포 스크립트 (`deploy.sh`) 작성
+![image (10)](https://github.com/user-attachments/assets/b360301e-a474-4854-b167-6382ee8a5724)
 
 - 위치: `/home/ubuntu/jarappdir` (호스트 기준)
   
@@ -92,6 +93,7 @@ echo "✅ Deployment complete! Check $DEST_HOST:$DEST_DIR/app.log for logs."
 ---
 
 ## ⚙️ 2. Jenkins Pipeline 설정
+- git url은 본인의 Github Repository 주소로 작성
 
 ```groovy
 pipeline {
@@ -161,18 +163,19 @@ docker cp /home/ubuntu/jarappdir/deploy.sh jenkins:/var/jenkins_home/scripts/dep
 ---
 
 ## ✅ 4. 배포 확인
-
 운영 서버(myserver02)에서 `.jar`가 실행 중인지 확인:
 
 ```bash
 ps aux | grep java
 ```
+![image (11)](https://github.com/user-attachments/assets/2ae1c0e1-d82b-4255-92dc-674330e5314f)
 
 또는 로그 확인:
 
 ```bash
 tail -f /home/ubuntu/app/app.log
 ```
+![image](https://github.com/user-attachments/assets/e5651be7-8b6b-401a-8093-cf2fa1f43f07)
 
 ---
 
@@ -184,27 +187,34 @@ tail -f /home/ubuntu/app/app.log
 ngrok http http://localhost:8080
 ```
 
-→ 생성된 URL을 복사 (예: `https://1234-abc.ngrok.io`)
+→ 생성된 URL을 복사 (예: `https://1234-abc.ngrok.app`)
+
+![image (12)](https://github.com/user-attachments/assets/9265b93f-d888-4fe3-b602-50645cb9c358)
+
 
 ### 🔗 2) GitHub 웹훅 설정
 
 - GitHub → Settings → Webhooks
+  
 - Payload URL에 `https://xxxx.ngrok.app/github-webhook/` 입력
    - /github-webhook/ 을 꼭 적어줘야 함
 - Content type: `application/x-www-form-urlencoded`
 - 이벤트: `Just the push event.`
 
+![image (13)](https://github.com/user-attachments/assets/03855339-f474-40d4-9607-90665372297d)
+
 ### 🛠 3) Spring Boot 포트 포워딩
-
-VirtualBox 포트 포워딩 설정 예:
-
-| 이름 | 호스트 포트 | 게스트 포트 |
-|------|--------------|--------------|
-| app  | 8081         | 8080         |
+- 브라우저 접근을 위해 호스트 포트와 게스트 포트를 매핑하는 포트 포워딩 설정이 필요
+- VirtualBox 포트 포워딩 설정 예:
+  
+  | 이름 | 호스트 IP | 호스트 포트 | 게스트 IP | 게스트 포트 |
+  |------|-----------|--------------|-----------|--------------|
+  | app  | 127.0.0.1 | 8081         | 10.0.2.20 | 8080         |
 
 ### ✅ 4) 자동화 테스트
 
-1. GitHub에 push  
+1. GitHub에 push
+   
 2. Jenkins에서 자동 빌드  
 3. myserver02에서 앱 자동 실행  
 4. 브라우저로 `localhost:8081` 접근하여 결과 확인
