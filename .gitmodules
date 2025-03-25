@@ -1,0 +1,3 @@
+[submodule "cicd-example"]
+	path = cicd-example
+	url = https://github.com/letmeloveyou82/20250324a.git
